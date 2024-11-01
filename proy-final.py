@@ -66,13 +66,9 @@ def solver_euler(condicion_inicial, h, valores_reales):
     
     return df
 
-def runge_kutta(condicion_inicial, h, valores_reales):
+def runge_kutta(condicion_inicial, h, valores_reales, f):
     # Condición inicial
     x0, y0 = condicion_inicial
-    
-    # Definir la ecuación diferencial y' = (x + y - 1)^2
-    def f(x, y):
-        return (x + y - 1)**2
     
     # Calcular valores de k y devolverlos en una lista
     def calcKs(xn, yn, h):
@@ -85,9 +81,7 @@ def runge_kutta(condicion_inicial, h, valores_reales):
         lista_Ks.append(f(xn + h/2, yn + (lista_Ks[1] * h/2)))
         # k4
         lista_Ks.append(f(xn + h, yn + (lista_Ks[2] * h)))
-        
-        print(lista_Ks)
-        
+                
         return lista_Ks
 
     # Inicializar listas para almacenar los valores
@@ -122,14 +116,58 @@ def runge_kutta(condicion_inicial, h, valores_reales):
         'Xn': Xn,
         'Yn': Yn,
         'ValorReal': ValorReal,
-        'ErrorAbsolutoEuler': ErrorAbsolutoRk4,
-        '% ErrorRelativoEuler': ErrorRelativoRk4,
+        'ErrorAbsoluto': ErrorAbsolutoRk4,
+        '% ErrorRelativo': ErrorRelativoRk4,
     }
     
     # Convertir a DataFrame para mejor visualización
     df = pd.DataFrame(data)
     
     return df
+
+def adamsBashford(condicion_inicial, h, valores_reales):
+    
+    # Definir la ecuación diferencial y' = (x + y - 1)^2
+    def f(x, y):
+        return (2*x - 3*y + 1)
+    
+    # Predecimos los primeros valores con rk4
+    runge_data = runge_kutta(condicion_inicial, h, valores_reales, f)
+    
+    # Lista donde guardaremos los f(x,y)
+    list_fn = []
+    
+    # Guardamos los items en la lista
+    for xn, yn in zip(runge_data['Xn'], runge_data['Yn']):
+        list_fn.append(f(xn, yn))
+    
+    # calculamos termino (55f0 - 59f-1 + 37f-2 - 9f-3)
+    term_fn = (55*list_fn[3] - 59*list_fn[2] + 37*list_fn[1] - 9*list_fn[0])        
+    
+    # Prediccion y1 = y0 + h/24 (55f0 - 59f-1 + 37f-2 - 9f-3)
+    y_pred_1 = runge_data['Yn'][3] + (h/24) * term_fn
+    
+    # Calcular f(x,y_pred_1)
+    f1_pred = f(0.8, y_pred_1)
+    
+    # Pasar corrector y1c = y0 + h/24 (9f1_pred + 19fo + 5f-1 + f-2)
+    y_final = runge_data['Yn'][3] + (h/24) * (9 * f1_pred + 19 * list_fn[3] - 5 * list_fn[2] + list_fn[1])
+
+    Xn = [runge_data['Xn'][1], runge_data['Xn'][2], runge_data['Xn'][3], 0.8]
+    Yn = [runge_data['Yn'][1], runge_data['Yn'][2], runge_data['Yn'][3], y_final]
+    
+    # Crear el dataset en forma de diccionario
+    data = {
+        'Xn': Xn,
+        'Yn': Yn
+    }
+    
+    # Convertir a DataFrame para mejor visualización
+    df = pd.DataFrame(data)
+    
+    return df
+    
+    # RECUERDA GARANTIZAR QUE LLEGUEN LA CANTIDAD DE DATOS QUE NECESITAS, QUE SOLO SE PUEDEN GUARDAR 4 EN LIST_FN
 
 # Valores reales proporcionados
 valores_reales = [2, 2.12, 2.30, 2.59, 3.06, 3.90]
@@ -138,11 +176,23 @@ valores_reales = [2, 2.12, 2.30, 2.59, 3.06, 3.90]
 condicion_inicial = (0, 2)
 h = 0.1
 
+# Condicion inicial para adamsBashford
+condicion_inicial_adams = (0, 1)
+
 pd.set_option('display.float_format', lambda x: '%.4f' % x)
+
+# Definir la ecuación diferencial y' = (x + y - 1)^2 para rk4
+def f(x, y):
+    return (x + y - 1)**2
 
 # Llamada a la función
 dataset_euler = solver_euler(condicion_inicial, h, valores_reales)
-dataset_rk4 = runge_kutta(condicion_inicial, h, valores_reales)
+dataset_rk4 = runge_kutta(condicion_inicial, h, valores_reales, f)
+dataset_adams = adamsBashford((0,1), 0.2, valores_reales)
+
+print("Tarea 1")
 print(dataset_euler)
-print()
+print("Tarea 2")
 print(dataset_rk4)
+print("Tarea 3")
+print(dataset_adams)
