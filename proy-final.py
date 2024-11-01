@@ -127,7 +127,7 @@ def runge_kutta(condicion_inicial, h, valores_reales, f):
 
 def adamsBashford(condicion_inicial, h, valores_reales):
     
-    # Definir la ecuación diferencial y' = (x + y - 1)^2
+    # Definir la ecuación diferencial
     def f(x, y):
         return (2*x - 3*y + 1)
     
